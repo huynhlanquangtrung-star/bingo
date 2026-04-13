@@ -1,672 +1,447 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo Vườn Thú Song Ngữ (Google AI Voice)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Trò Chơi Trắc Nghiệm Vui Nhộn</title>
+    <!-- Font chữ cho trẻ em -->
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Thư viện tạo pháo hoa -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
-        
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #F7F9F9;
+            --success: #2ECC71;
+            --danger: #E74C3C;
+        }
+
         body {
-            font-family: 'Nunito', sans-serif;
-            background-color: #2c3e50;
-            background-image: url('https://www.transparenttextures.com/patterns/clean-textile.png');
-            background-size: cover;
+            margin: 0;
+            padding: 0;
+            font-family: 'Baloo 2', cursive;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--dark);
         }
 
-        /* Styles kept consistent */
-        .bingo-ball {
-            background: radial-gradient(circle at 30% 30%, #e0f2f7, #b2ebf2 15%, #80deea 30%, #4dd0e1 100%);
-            box-shadow: 0 5px 10px -2px rgba(0, 0, 0, 0.4), inset 0 -3px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            color: #2c3e50;
-        }
-        
-        .bingo-ball.active {
-            transform: scale(1.1);
-            border: 4px solid #fbc02d;
-        }
-
-        .bingo-ball-main {
-            background: radial-gradient(circle at 30% 30%, #fffde7, #fff9c4 20%, #ffeb3b 50%, #fbc02d 100%);
-            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 4px solid rgba(255, 255, 255, 0.4);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        .cell {
-            transition: all 0.2s;
-            cursor: pointer;
-            background-color: #f7fafc;
-            border-color: #e2e8f0;
-        }
-        
-        .cell:active {
-            transform: scale(0.95);
-        }
-
-        .cell.marked {
-            background-color: #38b2ac;
-            border-color: #2c7a7b;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
             position: relative;
             overflow: hidden;
         }
 
-        .cell.marked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0px var(--accent);
         }
 
-        .cell.free {
-            background-color: #f6ad55;
+        /* Các màn hình */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.5s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Input & Buttons */
+        input[type="text"] {
+            width: 80%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 3px solid var(--secondary);
+            border-radius: 10px;
+            font-family: inherit;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        button {
+            background: var(--primary);
             color: white;
-            font-size: 0.8rem;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        /* Khung câu hỏi */
+        .header-game {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            border-color: #dd6b20;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-bottom: 2px dashed #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #2c3e50; }
-        ::-webkit-scrollbar-thumb { background: #55708a; border-radius: 4px; }
+        .question {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--dark);
+        }
 
-        .animal-image {
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background: var(--light);
+            color: var(--dark);
+            border: 3px solid var(--secondary);
+            border-radius: 15px;
+            font-size: 1.2rem;
+            box-shadow: none;
+            padding: 15px;
+        }
+
+        .option-btn:hover { background: var(--secondary); color: white; }
+        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--danger); color: white; border-color: var(--danger); }
+        .option-btn:disabled { cursor: not-allowed; transform: none; }
+
+        /* Bảng xếp hạng */
+        table {
             width: 100%;
-            height: 100%;
-            object-fit: contain; 
-            padding: 4px; 
-            border-radius: 6px;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        
-        /* Playing indicator */
-        .playing-audio .fa-volume-up {
-            animation: sound-wave 1s infinite;
-            color: #10b981;
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
         }
-        @keyframes sound-wave {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
+        th { background-color: var(--secondary); color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+
+        #btn-next { display: none; background: var(--secondary); }
     </style>
 </head>
-<body class="text-white min-h-screen flex flex-col items-center py-6 px-2 sm:px-4">
+<body>
 
-    <!-- Header -->
-    <header class="text-center mb-6 relative z-10">
-        <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 drop-shadow-lg tracking-wider">
-            BINGO SONG NGỮ
-        </h1>
-        <p class="text-gray-300 text-sm md:text-base mt-1">Giọng đọc AI Google chuẩn xác</p>
-    </header>
-
-    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left Column: The Caller Machine -->
-        <div class="lg:col-span-5 flex flex-col gap-4">
-            <!-- Main Display -->
-            <div class="bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-700 flex flex-col items-center justify-center relative overflow-hidden min-h-[250px]">
-                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 via-green-400 to-lime-400"></div>
-                
-                <!-- Current Animal Display -->
-                <div id="current-ball-container" class="relative z-10 mb-4">
-                    <div id="current-ball" class="bingo-ball-main w-40 h-40 rounded-full flex items-center justify-center text-6xl font-black text-white hidden p-2">
-                        <img id="current-animal-img" src="" alt="Current Animal" class="w-full h-full object-contain rounded-full">
-                    </div>
-                    <div id="start-placeholder" class="text-gray-500 text-xl font-bold animate-pulse">
-                        Nhấn "Bốc Số" để bắt đầu
-                    </div>
-                </div>
-
-                <!-- Reading Status -->
-                <div id="reading-status" class="h-6 text-yellow-400 font-bold text-sm mb-2 transition-opacity opacity-0">
-                    <i class="fas fa-volume-up mr-2"></i> <span id="reading-text">Đang đọc...</span>
-                </div>
-
-                <!-- Last 5 Animals -->
-                <div class="flex gap-2 h-12 items-center justify-center w-full">
-                    <span class="text-xs text-gray-500 uppercase font-bold mr-2">Mới ra:</span>
-                    <div id="history-container" class="flex gap-2">
-                        <!-- JS will populate this -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Controls -->
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="drawNumber()" id="btn-draw" class="bg-gradient-to-b from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition hover:-translate-y-1 active:translate-y-0 border-b-4 border-teal-800 text-lg">
-                    <i class="fas fa-paw mr-2"></i> Bốc Số
-                </button>
-                
-                <button onclick="toggleAuto()" id="btn-auto" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition hover:-translate-y-1 active:translate-y-0 border-b-4 border-gray-900">
-                    <i class="fas fa-play mr-2"></i> Tự Động
-                </button>
-
-                <button onclick="resetGame()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition border-b-4 border-red-800">
-                    <i class="fas fa-redo mr-2"></i> Chơi Lại
-                </button>
-
-                <button onclick="generatePlayerCard()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition border-b-4 border-blue-800">
-                    <i class="fas fa-ticket-alt mr-2"></i> Đổi Thẻ
-                </button>
-            </div>
-            
-            <div class="flex items-center justify-center gap-3 mt-2 text-sm text-gray-400">
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" id="sound-toggle" class="form-checkbox h-4 w-4 text-teal-600 rounded bg-gray-700 border-gray-600" checked>
-                    <span class="ml-2">Đọc Anh - Việt</span>
-                </label>
-                <span>•</span>
-                <span class="text-yellow-400 font-bold">Tốc độ: 6s</span>
-            </div>
-        </div>
-
-        <!-- Middle Column: The Board Tracker -->
-        <div class="lg:col-span-3 bg-gray-800 rounded-2xl p-4 shadow-xl border border-gray-700">
-            <h3 class="text-center text-gray-400 font-bold mb-3 text-sm uppercase tracking-wider">Bảng Các Con Vật Đã Gọi</h3>
-            <div class="grid grid-cols-5 gap-1.5 text-xs sm:text-sm" id="master-board">
-                <!-- JS Generates 1-40 here -->
-            </div>
-        </div>
-
-        <!-- Right Column: Player Card -->
-        <div class="lg:col-span-4">
-            <div class="bg-white rounded-2xl p-1 shadow-2xl transform rotate-1 transition hover:rotate-0 duration-300">
-                <div class="bg-emerald-600 rounded-t-xl p-3 text-center">
-                    <div class="grid grid-cols-5 text-center font-black text-2xl text-yellow-300 drop-shadow-md">
-                        <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
-                    </div>
-                </div>
-                <div class="bg-gray-100 p-3 rounded-b-xl">
-                    <div id="player-card" class="grid grid-cols-5 gap-2">
-                        <!-- JS Generates Card Here -->
-                    </div>
-                </div>
-            </div>
-            <p class="text-center text-gray-500 mt-4 text-sm italic">
-                Bấm vào ô con vật trên thẻ khi nghe thấy tên.
-            </p>
-        </div>
-
+<div class="container">
+    <!-- MÀN HÌNH 1: NHẬP TÊN -->
+    <div id="screen-login" class="screen active">
+        <h1>🌟 Chinh Phục Kiến Thức 🌟</h1>
+        <p>Nhập tên của em để bắt đầu cuộc hành trình nào!</p>
+        <input type="text" id="player-name" placeholder="Ví dụ: Nguyễn Văn A" autocomplete="off">
+        <br>
+        <button onclick="startGame()">Bắt Đầu Chơi!</button>
     </div>
 
-    <!-- Modal Winner -->
-    <div id="winner-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white text-gray-900 p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 animate-bounce-in transform scale-100 border-4 border-yellow-400">
-            <div class="text-6xl mb-4">🎉</div>
-            <h2 class="text-4xl font-black text-emerald-600 mb-2">BINGO!</h2>
-            <p class="text-lg text-gray-600 mb-6">Chúc mừng! Bạn đã chiến thắng!</p>
-            <button onclick="closeModal()" class="bg-yellow-400 hover:bg-yellow-500 text-emerald-800 font-black py-3 px-8 rounded-full shadow-lg text-lg transition hover:scale-105">
-                Tuyệt Vời!
-            </button>
+    <!-- MÀN HÌNH 2: CHƠI GAME -->
+    <div id="screen-game" class="screen">
+        <div class="header-game">
+            <div id="level-display">Màn: 1</div>
+            <div id="player-display">Người chơi: ???</div>
+            <div id="score-display">Điểm: 0</div>
+            <div id="time-display">⏰ 00:00</div>
         </div>
+        <div class="question" id="question-text">Câu hỏi hiển thị ở đây?</div>
+        <div class="options-grid" id="options-container">
+            <!-- Các nút đáp án sẽ được tạo tự động bằng JS -->
+        </div>
+        <button id="btn-next" onclick="nextQuestion()">Câu Tiếp Theo ➔</button>
     </div>
 
-    <script>
-        // Game State
-        const TOTAL_NUMBERS = 40;
+    <!-- MÀN HÌNH 3: KẾT QUẢ & BẢNG XẾP HẠNG -->
+    <div id="screen-result" class="screen">
+        <h1>🎉 Chúc mừng em đã hoàn thành! 🎉</h1>
+        <h2 id="final-score">Điểm của em: 0</h2>
+        <p id="final-stats">Đúng: 0 | Sai: 0 | Thời gian: 0s</p>
         
-        // DANH SÁCH TÊN CẬP NHẬT CHÍNH XÁC THEO YÊU CẦU CỦA THẦY
-        // Em đã bổ sung số 40 là "Mèo" để đủ danh sách.
-        const ANIMAL_NAMES_VI = [
-            "Sư tử", "Khỉ", "Thỏ", "Thỏ", "Hươu cao cổ", 
-            "Rùa", "Ong mật", "Khủng long", "Cánh cụt", "Ốc sên", 
-            "Cappybara", "Sao biển", "Voi", "Bọ rùa", "Nhím", 
-            "Cá ngựa", "Bạch tuộc", "Cá voi", "Vẹt", "Cappybara", 
-            "Hồng hạc", "Tắc kè", "Gấu mèo", "Hà mã", "Hổ", 
-            "Ốc sên", "Bò rừng", "Dê", "Dơi", "Quái vật", 
-            "Nhện", "Sứa", "Bạch tuộc", "Nhím", "Bướm", 
-            "Ngựa pony", "Khủng long", "Chó", "Kiến", "Mèo"
-        ];
+        <h3>🏆 BẢNG XẾP HẠNG 🏆</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hạng</th>
+                    <th>Tên</th>
+                    <th>Điểm</th>
+                    <th>Đúng</th>
+                    <th>Sai</th>
+                    <th>Thời gian</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <!-- Data đổ vào đây -->
+            </tbody>
+        </table>
+        <br>
+        <button onclick="location.reload()">Chơi Lại</button>
+    </div>
+</div>
+
+<script>
+    // --- DỮ LIỆU CÂU HỎI ---
+    const allQuestions = [
+        // MÀN 1 (Dễ)
+        { q: "Từ nói lên tình cảm của thiếu nhi với Bác Hồ là:", opts: ["A. Kính yêu", "B. Kính râm", "C. Quan tâm", "D. Giúp đỡ"], ans: 0, level: 1 },
+        { q: "Từ nào là từ chỉ sự vật?", opts: ["A. Nhảy", "B. Cây bút", "C. Xanh", "D. Ngọt"], ans: 1, level: 1 },
+        { q: "Một năm bắt đầu bằng mùa nào?", opts: ["A. Mùa xuân", "B. Mùa thu", "C. Mùa đông", "D. Mùa hè"], ans: 0, level: 1 },
+        { q: "Bánh chưng có dạng hình gì?", opts: ["A. Hình tròn", "B. Hình vuông", "C. Hình tam giác", "D. Hình chữ nhật"], ans: 1, level: 1 },
+        { q: "Anh của bố thì gọi là…", opts: ["A. Chú", "B. Bác", "C. Cậu", "D. Dì"], ans: 1, level: 1 },
+        { q: "Đồ vật ở trường bắt đầu bằng chữ Tr dùng để báo giờ vào học là cái gì?", opts: ["A. Thước kẻ", "B. Tủ sách", "C. Tập vở", "D. Trống trường"], ans: 3, level: 1 },
+        { q: "Trong câu “Em bé đang ngủ ngon”, từ nào chỉ hoạt động?", opts: ["A. Em bé", "B. Đang", "C. Ngủ", "D. Ngon"], ans: 2, level: 1 },
+        { q: "Khi viết chữ có các nguyên âm i, e, ê đứng sau, âm /cờ/ ở đầu tiếng ta viết bằng chữ gì?", opts: ["A. c", "B. q", "C. k", "D. gh"], ans: 2, level: 1 },
+        { q: "Dòng nào chỉ gồm các từ chỉ đặc điểm?", opts: ["A. Rực rỡ, xanh tươi, kì diệu.", "B. Rực rỡ, xanh tươi, hót.", "C. Xanh tươi, kì diệu, mây.", "D. Xanh tươi, núi sông, rực rỡ."], ans: 0, level: 1 },
+        { q: "Câu nào là câu giới thiệu?", opts: ["A. Đất nước mình thật tươi đẹp", "B. Mái tóc của mẹ mượt mà.", "C. Em là học sinh lớp hai.", "D. Hôm nay em đi thi."], ans: 2, level: 1 },
         
-        const ANIMAL_NAMES_EN = [
-            "Lion", "Monkey", "Rabbit", "Rabbit", "Giraffe",
-            "Turtle", "Honey Bee", "Dinosaur", "Penguin", "Snail",
-            "Capybara", "Starfish", "Elephant", "Ladybug", "Hedgehog",
-            "Seahorse", "Octopus", "Whale", "Parrot", "Capybara",
-            "Flamingo", "Gecko", "Raccoon", "Hippo", "Tiger",
-            "Snail", "Bison", "Goat", "Bat", "Monster",
-            "Spider", "Jellyfish", "Octopus", "Hedgehog", "Butterfly",
-            "Pony", "Dinosaur", "Dog", "Ant", "Cat"
-        ];
+        // MÀN 2 (Trung bình)
+        { q: "Từ ngữ nào sau đây là từ chỉ hoạt động bảo vệ, chăm sóc cây?", opts: ["A. tưới cây", "B. nhổ cây", "C. giẫm lên cỏ", "D. hái hoa"], ans: 0, level: 2 },
+        { q: "Câu ca dao “Một cây làm chẳng nên non...” khuyên chúng ta điều gì?", opts: ["A. Phải làm việc thật nhanh", "B. Một người làm việc tốt hơn nhiều người", "C. Đoàn kết, cùng nhau hợp sức", "D. Dựa vào người khác"], ans: 2, level: 2 },
+        { q: "Khi làm việc nhóm, bạn chưa hoàn thành, các bạn khác cùng hỗ trợ cho thấy:", opts: ["A. Không cần làm việc chung", "B. Mỗi người làm riêng", "C. Biết hợp tác, giúp đỡ nhau", "D. Chỉ một bạn làm"], ans: 2, level: 2 },
+        { q: "Câu ca dao “Có công mài sắt, có ngày nên kim” khuyên chúng ta điều gì?", opts: ["A. Làm việc phải thật nhanh", "B. Kiên trì, chăm chỉ sẽ thành công", "C. Làm một lần là xong", "D. Nhờ người khác làm giúp"], ans: 1, level: 2 },
+        { q: "Chọn dòng gồm các từ ngữ chỉ tình cảm của người thân trong gia đình.", opts: ["A. yêu thương, chăm chỉ, quan tâm", "B. yêu thương, chăm sóc, vui chơi", "C. yêu thương, làm việc, quan tâm", "D. yêu thương, chăm sóc, quan tâm"], ans: 3, level: 2 },
+        { q: "Khi gặp thầy cô giáo ở ngoài trường, em nên làm gì?", opts: ["A. Giả vờ không nhìn thấy.", "B. Chạy thật nhanh", "C. Khoanh tay, chào thầy cô lễ phép.", "D. Đợi thầy cô chào trước."], ans: 2, level: 2 },
+        { q: "Khi bố mẹ đi làm về muộn, em nên làm gì?", opts: ["A. Khóc vì bố mẹ về muộn.", "B. Chạy ra chào đón và lấy nước.", "C. Vẫn tiếp tục xem phim.", "D. Giả vờ đi ngủ."], ans: 1, level: 2 },
+        { q: "Khi được người lớn tặng quà, em nên làm gì?", opts: ["A. Nhận bằng hai tay và nói lời cảm ơn.", "B. Không nói gì.", "C. Không nhận quà.", "D. Nhận bằng một tay."], ans: 0, level: 2 },
+        { q: "Việc làm nào thể hiện bảo quản tốt đồ dùng gia đình?", opts: ["A. Không nóng cũng mở quạt", "B. Vẽ bậy lên tường.", "C. Sử dụng tivi cả ngày", "D. Tắt điện, quạt khi ra khỏi phòng."], ans: 3, level: 2 },
+        { q: "Khi em mắc lỗi em phải?", opts: ["A. Nhận lỗi và sửa lỗi.", "B. Đổ lỗi cho người khác.", "C. Không cảm thấy lo lắng.", "D. Im lặng không làm gì."], ans: 0, level: 2 },
 
-        let drawnNumbers = [];
-        let remainingNumbers = Array.from({length: TOTAL_NUMBERS}, (_, i) => i + 1);
-        let playerCardData = [];
-        let markedCells = new Set();
-        let autoInterval = null;
-        let isAutoPlaying = false;
+        // MÀN 3 (Khó)
+        { q: "Đèn tín hiệu giao thông gồm mấy màu?", opts: ["A. 2 màu", "B. 3 màu", "C. 4 màu", "D. 5 màu"], ans: 1, level: 3 },
+        { q: "Khi bạn vô tình làm hỏng bút của em, em nên xử lý thế nào?", opts: ["A. Lập tức đánh bạn.", "B. Khóc to.", "C. Nhắc nhở bạn xin lỗi và cẩn thận hơn.", "D. Đòi bạn đền bút đắt tiền hơn."], ans: 2, level: 3 },
+        { q: "Việc làm nào sau đây thể hiện sự kính trọng thầy giáo, cô giáo?", opts: ["A. Lễ phép chào hỏi khi gặp thầy cô.", "B. Thầy cô không dạy mình thì không chào.", "C. Nói chuyện riêng trong giờ học.", "D. Không học bài, không làm bài tập."], ans: 0, level: 3 },
+        { q: "Khi thấy các bạn đang vẽ bậy lên tường lớp học, em nên làm gì?", opts: ["A. Tham gia vẽ cùng", "B. Đứng xem.", "C. Bỏ đi chỗ khác.", "D. Khuyên bạn dừng lại và báo giáo viên."], ans: 3, level: 3 },
+        { q: "Trong những việc làm sau, việc nào KHÔNG thể hiện tình yêu đối với quê hương?", opts: ["A. Biết ơn người có công.", "B. Chăm sóc, bảo vệ thiên nhiên.", "C. Vứt rác bừa bãi, hái hoa ven đường.", "D. Cố gắng học giỏi xây dựng quê hương."], ans: 2, level: 3 },
+        { q: "Việc làm nào thể hiện em biết quý trọng thời gian?", opts: ["A. Làm bài đúng giờ, không mải chơi", "B. Mải xem tivi rồi để bài tập muộn", "C. Đi học trễ vì ngủ nướng", "D. Chơi trước, bài tập để hôm sau"], ans: 0, level: 3 },
+        { q: "Khi nhìn thấy bạn bị ngã xuống nước, em nên làm gì?", opts: ["A. Nhảy ngay xuống nước cứu bạn.", "B. Kêu cứu người lớn, ném phao hoặc dùng sào.", "C. Bỏ chạy đi tìm người thân.", "D. Đứng trên bờ khóc."], ans: 1, level: 3 },
+        { q: "Tại sao không nên nô đùa, xô đẩy nhau gần ao, hồ, sông, suối?", opts: ["A. Vì dễ làm bẩn quần áo.", "B. Vì bị la mắng.", "C. Vì dễ trượt chân, ngã gây đuối nước.", "D. Vì làm ồn."], ans: 2, level: 3 },
+        { q: "Khi bạn mới chuyển đến lớp còn rụt rè, em nên làm gì để ứng xử thân thiện?", opts: ["A. Không nói chuyện với bạn", "B. Trêu chọc bạn cho vui", "C. Chủ động chào hỏi, rủ bạn cùng chơi.", "D. Bỏ đi chơi với nhóm bạn cũ"], ans: 2, level: 3 },
+        { q: "Khi ở nhà một mình, để giữ an toàn em nên làm gì?", opts: ["A. Tự ý bật bếp nấu ăn", "B. Mở cửa cho người lạ vào nhà", "C. Không nghịch điện, không mở cửa cho người lạ.", "D. Leo trèo lên cửa sổ cho thoáng"], ans: 2, level: 3 }
+    ];
+
+    // --- BIẾN TOÀN CỤC ---
+    let playerName = "";
+    let gameQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let timeSeconds = 0;
+    let timerInterval;
+
+    // Các câu nói tiếng Việt ngẫu nhiên khi đúng
+    const praiseWords = ["Giỏi quá!", "Tuyệt vời!", "Đúng rồi!", "Xuất sắc!", "Quá đỉnh!"];
+
+    // --- HÀM XỬ LÝ ---
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    // Khởi tạo và phân loại câu hỏi theo màn
+    function prepareQuestions() {
+        let level1 = allQuestions.filter(q => q.level === 1);
+        let level2 = allQuestions.filter(q => q.level === 2);
+        let level3 = allQuestions.filter(q => q.level === 3);
         
-        // Audio handling variables
-        let currentAudio = null;
-        let audioQueue = []; 
+        shuffleArray(level1);
+        shuffleArray(level2);
+        shuffleArray(level3);
 
-        // DOM Elements
-        const currentBallEl = document.getElementById('current-ball');
-        const currentAnimalImgEl = document.getElementById('current-animal-img');
-        const startPlaceholder = document.getElementById('start-placeholder');
-        const historyContainer = document.getElementById('history-container');
-        const masterBoard = document.getElementById('master-board');
-        const playerCardEl = document.getElementById('player-card');
-        const btnAuto = document.getElementById('btn-auto');
-        const winnerModal = document.getElementById('winner-modal');
-        const soundToggle = document.getElementById('sound-toggle');
-        const readingStatus = document.getElementById('reading-status');
-        const readingText = document.getElementById('reading-text');
+        gameQuestions = [...level1, ...level2, ...level3];
+    }
 
-        // --- Helper Function for Image URLs ---
-        function getAnimalImageUrl(id) {
-            return `https://dangkyhoc.com/download/40-con-vat/${id}.png`;
+    function formatTime(sec) {
+        let m = Math.floor(sec / 60).toString().padStart(2, '0');
+        let s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function startGame() {
+        let nameInput = document.getElementById('player-name').value.trim();
+        if (nameInput === "") {
+            alert("Em hãy nhập tên để bắt đầu nhé!");
+            return;
         }
-
-        // --- Initialization ---
-        function initGame() {
-            createMasterBoard();
-            generatePlayerCard();
-        }
-
-        function resetGame() {
-            stopAuto();
-            stopAudio(); // Stop any playing sound immediately
-
-            drawnNumbers = [];
-            remainingNumbers = Array.from({length: TOTAL_NUMBERS}, (_, i) => i + 1);
-            markedCells = new Set();
-            markedCells.add(12); // Free space
-            
-            currentBallEl.classList.add('hidden');
-            currentAnimalImgEl.src = '';
-            startPlaceholder.classList.remove('hidden');
-            historyContainer.innerHTML = '';
-            
-            document.querySelectorAll('.master-cell').forEach(cell => {
-                cell.classList.remove('bg-emerald-500', 'text-white', 'scale-110', 'shadow-lg', 'border-emerald-600');
-                cell.classList.add('bg-gray-700', 'text-gray-400', 'border-gray-600');
-            });
-
-            renderPlayerCard();
-        }
-
-        // --- Master Board Logic ---
-        function createMasterBoard() {
-            masterBoard.innerHTML = '';
-            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
-                const cell = document.createElement('div');
-                cell.id = `master-${i}`;
-                cell.className = 'master-cell h-10 w-full flex items-center justify-center rounded bg-gray-700 border border-gray-600 text-gray-400 font-semibold text-xs transition-all duration-300 relative overflow-hidden group';
-                
-                const img = document.createElement('img');
-                img.src = getAnimalImageUrl(i);
-                img.alt = ANIMAL_NAMES_VI[i-1];
-                img.className = 'w-full h-full object-contain p-1 transition-transform group-hover:scale-105';
-                cell.appendChild(img);
-
-                const label = document.createElement('div');
-                label.className = 'absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-70 text-white text-center text-[0.6rem] py-0.5 opacity-0 group-hover:opacity-100 transition-opacity';
-                label.textContent = ANIMAL_NAMES_VI[i-1];
-                cell.appendChild(label);
-                
-                masterBoard.appendChild(cell);
-            }
-        }
-
-        // --- Player Card Logic ---
-        function generatePlayerCard() {
-            markedCells = new Set();
-            
-            let availableAnimals = Array.from({length: TOTAL_NUMBERS}, (_, i) => i + 1);
-            let shuffledAnimals = availableAnimals.sort(() => 0.5 - Math.random());
-            let cardAnimals = shuffledAnimals.slice(0, 24); 
-
-            // Insert 'FREE' space at index 12
-            cardAnimals.splice(12, 0, 'FREE'); 
-            playerCardData = cardAnimals;
-            markedCells.add(12);
-
-            renderPlayerCard();
-        }
-
-        function renderPlayerCard() {
-            playerCardEl.innerHTML = '';
-            playerCardData.forEach((val, index) => {
-                const cell = document.createElement('div');
-                let className = 'cell h-16 sm:h-20 w-full rounded-lg border-2 flex items-center justify-center font-bold shadow-sm relative overflow-hidden ';
-                
-                if (val === 'FREE') {
-                    className += 'free border-amber-500 text-sm';
-                    cell.innerHTML = '<i class="fas fa-star text-3xl text-white"></i><br>FREE';
-                } else {
-                    const img = document.createElement('img');
-                    img.src = getAnimalImageUrl(val);
-                    img.alt = ANIMAL_NAMES_VI[val-1];
-                    img.className = 'animal-image';
-                    cell.appendChild(img);
-
-                    const label = document.createElement('div');
-                    label.className = 'absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-70 text-white text-center text-xs py-0.5 opacity-0 transition-opacity group-hover:opacity-100';
-                    label.textContent = ANIMAL_NAMES_VI[val-1];
-                    cell.appendChild(label);
-
-                    className += 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50 group';
-                }
-
-                if (markedCells.has(index)) {
-                    className += ' marked';
-                }
-
-                cell.className = className;
-                cell.onclick = () => toggleMark(index, val);
-                playerCardEl.appendChild(cell);
-            });
-        }
-
-        function toggleMark(index, val) {
-            if (val === 'FREE') return;
-            
-            if (!drawnNumbers.includes(val)) {
-                const cell = playerCardEl.children[index];
-                cell.classList.add('bg-red-200', 'ring-2', 'ring-red-500');
-                setTimeout(() => cell.classList.remove('bg-red-200', 'ring-2', 'ring-red-500'), 400);
-                return; 
-            }
-
-            if (markedCells.has(index)) {
-                markedCells.delete(index);
-            } else {
-                markedCells.add(index);
-            }
-            renderPlayerCard();
-            checkWin();
-        }
-
-        // --- Game Logic ---
-        function drawNumber() {
-            if (remainingNumbers.length === 0) {
-                showInfoModal("Thông báo", "Đã hết con vật để bốc!");
-                stopAuto();
-                return;
-            }
-
-            const randomIndex = Math.floor(Math.random() * remainingNumbers.length);
-            const animalId = remainingNumbers[randomIndex];
-            
-            remainingNumbers.splice(randomIndex, 1);
-            drawnNumbers.unshift(animalId);
-
-            animateBall(animalId);
-            updateMasterBoard(animalId);
-            updateHistory();
-            
-            // Trigger the improved AI Voice
-            playAnimalSoundSequence(animalId);
-            
-            autoMarkPlayerCard(animalId);
-        }
-
-        function autoMarkPlayerCard(drawnAnimalId) {
-            playerCardData.forEach((cardAnimalId, index) => {
-                if (cardAnimalId === drawnAnimalId && !markedCells.has(index)) {
-                    const cell = playerCardEl.children[index];
-                    cell.classList.add('bg-yellow-200', 'ring-4', 'ring-yellow-500', 'animate-pulse');
-                    setTimeout(() => {
-                        cell.classList.remove('bg-yellow-200', 'ring-4', 'ring-yellow-500', 'animate-pulse');
-                        markedCells.add(index);
-                        renderPlayerCard();
-                        checkWin();
-                    }, 800);
-                }
-            });
-        }
-
-        function updateMasterBoard(num) {
-            const cell = document.getElementById(`master-${num}`);
-            if (cell) {
-                cell.classList.remove('bg-gray-700', 'text-gray-400', 'border-gray-600');
-                cell.classList.add('bg-emerald-500', 'text-white', 'scale-110', 'shadow-lg', 'border-emerald-600', 'z-10');
-            }
-        }
-
-        function updateHistory() {
-            historyContainer.innerHTML = '';
-            const history = drawnNumbers.slice(1, 6);
-            history.forEach(animalId => {
-                const ball = document.createElement('div');
-                ball.className = 'bingo-ball w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-gray-800 border border-gray-300 p-1';
-                const img = document.createElement('img');
-                img.src = getAnimalImageUrl(animalId);
-                img.alt = ANIMAL_NAMES_VI[animalId-1];
-                img.className = 'w-full h-full object-contain rounded-full';
-                ball.appendChild(img);
-                historyContainer.appendChild(ball);
-            });
-        }
-
-        function animateBall(animalId) {
-            startPlaceholder.classList.add('hidden');
-            currentBallEl.classList.remove('hidden');
-            
-            currentAnimalImgEl.src = getAnimalImageUrl(animalId);
-            currentAnimalImgEl.alt = ANIMAL_NAMES_VI[animalId-1];
-
-            currentBallEl.classList.remove('bingo-ball-main');
-            void currentBallEl.offsetWidth;
-            currentBallEl.classList.add('bingo-ball-main');
-        }
-
-        function toggleAuto() {
-            if (isAutoPlaying) {
-                stopAuto();
-            } else {
-                startAuto();
-            }
-        }
-
-        function startAuto() {
-            isAutoPlaying = true;
-            document.getElementById('btn-draw').disabled = true;
-            btnAuto.innerHTML = '<i class="fas fa-stop mr-2"></i> Dừng lại';
-            btnAuto.classList.remove('bg-gray-700');
-            btnAuto.classList.add('bg-red-600');
-            
-            drawNumber(); 
-            // INCREASED INTERVAL TO 6000ms (6 seconds) to ensure audio finishes
-            autoInterval = setInterval(drawNumber, 6000); 
-        }
-
-        function stopAuto() {
-            isAutoPlaying = false;
-            document.getElementById('btn-draw').disabled = false;
-            clearInterval(autoInterval);
-            btnAuto.innerHTML = '<i class="fas fa-play mr-2"></i> Tự Động';
-            btnAuto.classList.add('bg-gray-700');
-            btnAuto.classList.remove('bg-red-600');
-        }
-
-        // =========================================================
-        // NEW AUDIO ENGINE: USING GOOGLE TRANSLATE TTS (AI VOICE)
-        // =========================================================
+        playerName = nameInput;
+        document.getElementById('player-display').innerText = "Người chơi: " + playerName;
         
-        function stopAudio() {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-            }
-            readingStatus.style.opacity = '0';
-            readingStatus.classList.remove('playing-audio');
-        }
+        prepareQuestions();
+        score = 0;
+        correctCount = 0;
+        wrongCount = 0;
+        currentQuestionIndex = 0;
+        timeSeconds = 0;
 
-        async function playAnimalSoundSequence(animalId) {
-            if (!soundToggle.checked) return;
-            
-            stopAudio(); // Clear previous sound
-            
-            const enName = ANIMAL_NAMES_EN[animalId - 1];
-            const viName = ANIMAL_NAMES_VI[animalId - 1];
+        switchScreen('screen-game');
+        loadQuestion();
 
-            // Visual Feedback
-            readingStatus.style.opacity = '1';
-            readingStatus.classList.add('playing-audio');
-            
-            try {
-                // 1. Play English
-                readingText.textContent = `Đang đọc: ${enName}`;
-                await playGoogleTTS(enName, 'en');
+        // Chạy đồng hồ
+        timerInterval = setInterval(() => {
+            timeSeconds++;
+            document.getElementById('time-display').innerText = "⏰ " + formatTime(timeSeconds);
+        }, 1000);
+    }
 
-                // 2. Wait 2 seconds
-                readingText.textContent = "...";
-                readingStatus.classList.remove('playing-audio'); // Stop wave animation during pause
-                await new Promise(r => setTimeout(r, 2000));
-                readingStatus.classList.add('playing-audio'); // Resume wave
-
-                // 3. Play Vietnamese
-                readingText.textContent = `Đang đọc: ${viName}`;
-                await playGoogleTTS(viName, 'vi');
-
-            } catch (error) {
-                console.error("Audio playback failed", error);
-                // Fallback to browser synthesis if network fails
-                fallbackSynthesis(enName, viName);
-            } finally {
-                readingStatus.style.opacity = '0';
-                readingStatus.classList.remove('playing-audio');
-            }
-        }
-
-        function playGoogleTTS(text, lang) {
-            return new Promise((resolve, reject) => {
-                // Google Translate TTS Endpoint (Unofficial but reliable for frontend)
-                // client=tw-ob is key here for open access
-                const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
-                
-                currentAudio = new Audio(url);
-                
-                currentAudio.onended = () => {
-                    resolve();
-                };
-                
-                currentAudio.onerror = (e) => {
-                    reject(e);
-                };
-                
-                currentAudio.play().catch(e => reject(e));
-            });
-        }
-
-        function fallbackSynthesis(en, vi) {
-            // Improved Fallback: Force find a Vietnamese voice if possible
-            window.speechSynthesis.cancel();
-            const uEn = new SpeechSynthesisUtterance(en);
-            uEn.lang = 'en-US';
-            
-            const uVi = new SpeechSynthesisUtterance(vi);
-            uVi.lang = 'vi-VN';
-            
-            // Try to find a Google/Microsoft Vietnamese voice
-            const voices = window.speechSynthesis.getVoices();
-            const viVoice = voices.find(v => v.lang.includes('vi') || v.name.includes('Viet'));
-            if (viVoice) uVi.voice = viVoice;
-
-            uEn.onend = () => {
-                setTimeout(() => window.speechSynthesis.speak(uVi), 2000);
-            };
-            window.speechSynthesis.speak(uEn);
-        }
+    function loadQuestion() {
+        document.getElementById('btn-next').style.display = 'none';
         
-        // Pre-load voices for fallback
+        let q = gameQuestions[currentQuestionIndex];
+        document.getElementById('level-display').innerText = "Màn: " + q.level + " (Câu " + (currentQuestionIndex+1) + "/30)";
+        document.getElementById('question-text').innerText = q.q;
+
+        let optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        q.opts.forEach((opt, index) => {
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    // Đọc giọng nói Tiếng Việt
+    function speakText(text) {
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.getVoices();
+            let msg = new SpeechSynthesisUtterance();
+            msg.text = text;
+            msg.lang = 'vi-VN';
+            msg.rate = 1.1; // Tốc độ nói
+            window.speechSynthesis.speak(msg);
         }
+    }
 
-        // --- Win Checking (5x5) ---
-        function checkWin() {
-            const size = 5;
-            const wins = [];
+    function checkAnswer(selectedIndex, btnElement) {
+        // Khóa tất cả các nút
+        let allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(b => b.disabled = true);
 
-            // Rows
-            for (let i = 0; i < size; i++) {
-                const row = [];
-                for (let j = 0; j < size; j++) { row.push(i * size + j); }
-                wins.push(row);
-            }
-            // Cols
-            for (let j = 0; j < size; j++) {
-                const col = [];
-                for (let i = 0; i < size; i++) { col.push(i * size + j); }
-                wins.push(col);
-            }
-            // Diagonals
-            const diag1 = [], diag2 = [];
-            for (let i = 0; i < size; i++) {
-                diag1.push(i * size + i);
-                diag2.push(i * size + (size - 1 - i));
-            }
-            wins.push(diag1);
-            wins.push(diag2);
-
-            for (let combo of wins) {
-                if (combo.every(index => markedCells.has(index))) {
-                    doWin();
-                    return;
-                }
-            }
-        }
-
-        function doWin() {
-            stopAuto();
-            stopAudio();
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            
-            // Play Win Sound via Google TTS
-            playGoogleTTS("Chúc mừng bạn đã chiến thắng Bingo!", "vi");
-            
-            winnerModal.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            winnerModal.classList.add('hidden');
-            resetGame();
-        }
+        let q = gameQuestions[currentQuestionIndex];
         
-        function showInfoModal(title, message) {
-            const existingModal = document.getElementById('info-modal');
-            if (existingModal) existingModal.remove();
-
-            const modal = document.createElement('div');
-            modal.id = 'info-modal';
-            modal.className = 'fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm';
+        if (selectedIndex === q.ans) {
+            btnElement.classList.add('correct');
+            score += 10;
+            correctCount++;
+            document.getElementById('score-display').innerText = "Điểm: " + score;
             
-            modal.innerHTML = `
-                <div class="bg-white text-gray-900 p-6 rounded-2xl shadow-2xl text-center max-w-xs mx-4 transform scale-100 border-4 border-blue-400">
-                    <h2 class="text-2xl font-black text-blue-600 mb-3">${title}</h2>
-                    <p class="text-md text-gray-600 mb-4">${message}</p>
-                    <button onclick="document.getElementById('info-modal').remove()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full shadow transition">
-                        Đã hiểu
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(modal);
+            // Hiệu ứng pháo hoa
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            
+            // Đọc giọng nói random
+            let randomPraise = praiseWords[Math.floor(Math.random() * praiseWords.length)];
+            speakText(randomPraise);
+
+        } else {
+            btnElement.classList.add('wrong');
+            wrongCount++;
+            // Bôi xanh đáp án đúng để HS biết
+            allBtns[q.ans].classList.add('correct');
+            speakText("Sai mất rồi, cố lên em nhé!");
         }
 
-        initGame();
+        document.getElementById('btn-next').style.display = 'inline-block';
+    }
 
-    </script>
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < gameQuestions.length) {
+            loadQuestion();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        clearInterval(timerInterval);
+        switchScreen('screen-result');
+        
+        document.getElementById('final-score').innerText = "Điểm của em: " + score;
+        document.getElementById('final-stats').innerText = `Đúng: ${correctCount} | Sai: ${wrongCount} | Thời gian: ${formatTime(timeSeconds)}`;
+
+        saveDataAndShowLeaderboard();
+    }
+
+    function saveDataAndShowLeaderboard() {
+        // Lấy dữ liệu cũ từ LocalStorage
+        let leaderBoard = JSON.parse(localStorage.getItem('quizLeaderboard')) || [];
+        
+        // Thêm người chơi hiện tại
+        leaderBoard.push({
+            name: playerName,
+            score: score,
+            correct: correctCount,
+            wrong: wrongCount,
+            time: formatTime(timeSeconds),
+            rawTime: timeSeconds
+        });
+
+        // Sắp xếp: Điểm giảm dần, nếu điểm bằng thì thời gian ít hơn xếp trên
+        leaderBoard.sort((a, b) => {
+            if (b.score === a.score) return a.rawTime - b.rawTime;
+            return b.score - a.score;
+        });
+
+        // Lưu lại vào trình duyệt
+        localStorage.setItem('quizLeaderboard', JSON.stringify(leaderBoard));
+
+        // Đổ dữ liệu ra bảng
+        let tbody = document.getElementById('leaderboard-body');
+        tbody.innerHTML = '';
+        
+        // Chỉ hiện Top 10
+        leaderBoard.slice(0, 10).forEach((p, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td><strong>${p.name}</strong></td>
+                <td>${p.score}</td>
+                <td>${p.correct}</td>
+                <td>${p.wrong}</td>
+                <td>${p.time}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        /* --- LƯU Ý VỀ CANVA SHEET / GOOGLE SHEET ---
+           Đoạn JS này hiện đang lưu tạm vào LocalStorage của trình duyệt.
+           Để đẩy dữ liệu lên Google Sheets (giống ý bạn hỏi), 
+           bạn cần phải sử dụng Google Apps Script và lệnh fetch() tại đây. 
+        */
+    }
+</script>
+
 </body>
 </html>
